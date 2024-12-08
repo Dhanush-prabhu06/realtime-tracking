@@ -29,7 +29,7 @@ const DriverDashboard = () => {
     if (isSharing) {
       locationInterval = setInterval(() => {
         navigator.geolocation.getCurrentPosition(getCurrentLocation);
-      }, 5000);
+      }, 15000);
     } else {
       clearInterval(locationInterval);
       recordLastLocation(driverId, lastLocation);
