@@ -2,25 +2,31 @@ import React, { useState, useEffect } from "react";
 import { ref, onValue } from "firebase/database";
 import { auth } from "../firebase";
 import Map from "./Map";
+import { updateDriverLocation, recordLastLocation } from "../LocationService";
 import { database } from "../firebase";
-import {
-  updateDriverLocation,
-  recordLastLocation,
-  clearDriverData, // Correct function name
-} from "../LocationService";
 
 const DriverDashboard = () => {
   const [isSharing, setIsSharing] = useState(false);
   const [locations, setLocations] = useState([]);
   const [lastLocation, setLastLocation] = useState({});
-  const driverId = auth.currentUser?.uid; // Unique driver ID
+  const [mapCenter, setMapCenter] = useState({
+    lat: 13.326955,
+    lng: 77.123847,
+  }); // Default center
+  const driverId = auth.currentUser?.uid;
 
   const toggleSharing = () => setIsSharing(!isSharing);
 
   const getCurrentLocation = (position) => {
     const { latitude, longitude } = position.coords;
-    setLastLocation({ latitude, longitude });
-    updateDriverLocation(driverId, { latitude, longitude });
+    const currentLocation = { latitude, longitude };
+    setLastLocation(currentLocation);
+    updateDriverLocation(driverId, currentLocation);
+
+    // Update map center only if the driver is sharing
+    if (isSharing) {
+      setMapCenter({ lat: latitude, lng: longitude });
+    }
   };
 
   useEffect(() => {
@@ -29,7 +35,7 @@ const DriverDashboard = () => {
     if (isSharing) {
       locationInterval = setInterval(() => {
         navigator.geolocation.getCurrentPosition(getCurrentLocation);
-      }, 15000);
+      }, 10000);
     } else {
       clearInterval(locationInterval);
       recordLastLocation(driverId, lastLocation);
@@ -62,7 +68,12 @@ const DriverDashboard = () => {
           className="ml-2"
         />
       </label>
-      <Map locations={locations} currentDriverId={driverId} />
+      <Map
+        locations={locations}
+        currentDriverId={driverId}
+        mapCenter={mapCenter} // Pass the center state to the Map component
+        onMarkerClick={(lat, lng) => setMapCenter({ lat, lng })} // Allow manual recentering
+      />
     </div>
   );
 };
