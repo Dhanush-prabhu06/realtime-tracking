@@ -6,6 +6,7 @@ import AdminDashboard from "./components/admin/AdminDashboard";
 import DriverDashboard from "./components/DriverDashboard";
 import DriverDetails from "./components/admin/DriverDetails";
 import DriverRegistration from "./components/admin/DriverRegistration";
+import UserDetails from "./components/admin/UserDetails";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           path="/admin/driverRegistration"
           element={<DriverRegistration />}
         />
+        <Route path="/admin/userDetails" element={<UserDetails />} />
         <Route path="/driver" element={<DriverDashboard />} />
       </Routes>
     </Router>

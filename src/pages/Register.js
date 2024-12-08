@@ -1,51 +1,141 @@
 import React, { useState } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, firestore } from "../firebase"; // Firebase setup
+import { useNavigate } from "react-router-dom";
 
-const Register = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState("driver"); // Default role
+const UserRegistration = () => {
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    name: "",
+    mobileNumber: "",
+    address: "",
+    busNumber: "",
+    guardianName: "",
+  });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleRegistration = async (e) => {
     e.preventDefault();
-    createUserWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        console.log("User registered:", userCredential.user);
-      })
-      .catch((error) => console.error("Error:", error));
+    setError("");
+    setLoading(true);
+
+    try {
+      // Create user in Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
+      const user = userCredential.user;
+
+      // Add user details to Firestore with default role as 'user'
+      await setDoc(doc(firestore, "users", user.uid), {
+        email: formData.email,
+        name: formData.name,
+        mobileNumber: formData.mobileNumber,
+        address: formData.address,
+        busNumber: formData.busNumber,
+        guardianName: formData.guardianName,
+        role: "user", // Default role
+      });
+
+      // Navigate to login or home page after registration
+      navigate("/login");
+    } catch (err) {
+      console.error("Error during registration:", err);
+      setError(err.message || "Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-4">
-      <h1 className="text-xl font-bold">Register</h1>
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className="block mt-2"
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        className="block mt-2"
-      />
-      <select
-        value={role}
-        onChange={(e) => setRole(e.target.value)}
-        className="block mt-2"
+    <div className="flex justify-center items-center h-screen bg-gray-100">
+      <form
+        onSubmit={handleRegistration}
+        className="p-6 bg-white rounded shadow-md w-full max-w-md"
       >
-        <option value="driver">Driver</option>
-        <option value="admin">Admin</option>
-      </select>
-      <button type="submit" className="mt-4 p-2 bg-blue-500 text-white">
-        Register
-      </button>
-    </form>
+        <h1 className="text-2xl font-bold mb-4">Register</h1>
+        {error && <p className="text-red-500 mb-4">{error}</p>}
+
+        <input
+          type="text"
+          name="name"
+          placeholder="Full Name"
+          value={formData.name}
+          onChange={handleChange}
+          className="block w-full p-2 border rounded mb-4"
+          required
+        />
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={formData.email}
+          onChange={handleChange}
+          className="block w-full p-2 border rounded mb-4"
+          required
+        />
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={formData.password}
+          onChange={handleChange}
+          className="block w-full p-2 border rounded mb-4"
+          required
+        />
+        <input
+          type="text"
+          name="mobileNumber"
+          placeholder="Mobile Number"
+          value={formData.mobileNumber}
+          onChange={handleChange}
+          className="block w-full p-2 border rounded mb-4"
+        />
+        <input
+          type="text"
+          name="address"
+          placeholder="Address"
+          value={formData.address}
+          onChange={handleChange}
+          className="block w-full p-2 border rounded mb-4"
+        />
+        <input
+          type="text"
+          name="busNumber"
+          placeholder="Bus Number (if applicable)"
+          value={formData.busNumber}
+          onChange={handleChange}
+          className="block w-full p-2 border rounded mb-4"
+        />
+        <input
+          type="text"
+          name="guardianName"
+          placeholder="Guardian Name"
+          value={formData.guardianName}
+          onChange={handleChange}
+          className="block w-full p-2 border rounded mb-4"
+        />
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full p-2 bg-green-500 text-white rounded"
+        >
+          {loading ? "Registering..." : "Register"}
+        </button>
+      </form>
+    </div>
   );
 };
 
-export default Register;
+export default UserRegistration;

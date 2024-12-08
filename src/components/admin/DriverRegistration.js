@@ -2,6 +2,7 @@ import { useState } from "react";
 import { auth, firestore } from "../../firebase"; // Import Firestore
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { collection, addDoc, Timestamp } from "firebase/firestore"; // Firestore functions
+import { useNavigate } from "react-router-dom";
 
 const DriverRegistration = () => {
   const [formData, setFormData] = useState({
@@ -18,6 +19,7 @@ const DriverRegistration = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false); // State to track loading
   const [drivers, setDrivers] = useState([]); // Store registered driver details
+  const navigate = useNavigate();
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -47,6 +49,7 @@ const DriverRegistration = () => {
         area: formData.area,
         capacity: formData.capacity,
         route: formData.route,
+        role: "driver", // Assign role as "driver"
         createdAt: Timestamp.now(),
       });
 
@@ -67,6 +70,8 @@ const DriverRegistration = () => {
         capacity: "",
         route: "",
       });
+
+      navigate("/admin/driverDetails");
     } catch (err) {
       setError(err.message);
     } finally {
