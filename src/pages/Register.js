@@ -129,7 +129,7 @@ const UserRegistration = () => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full p-2 bg-green-500 text-white rounded"
+          className="w-full p-2 bg-blue-500 text-white rounded"
         >
           {loading ? "Registering..." : "Register"}
         </button>

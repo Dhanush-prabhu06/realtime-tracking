@@ -42,7 +42,6 @@ const Login = () => {
       const userDoc = await getDoc(doc(firestore, "users", user.uid));
 
       if (userDoc.exists()) {
-        // const userData = userDoc.data();
         navigate("/user"); // Redirect normal users to user dashboard
       } else {
         // If not in "users", query the "drivers" collection
@@ -67,33 +66,70 @@ const Login = () => {
   };
 
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
-      <form onSubmit={handleLogin} className="p-6 bg-white rounded shadow-md">
-        <h1 className="text-2xl font-bold mb-4">Login</h1>
-        {error && <p className="text-red-500 mb-2">{error}</p>}
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="block w-full p-2 border rounded mb-4"
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="block w-full p-2 border rounded mb-4"
-          required
-        />
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-500 to-indigo-700 px-4">
+      <form
+        onSubmit={handleLogin}
+        className="w-full max-w-md bg-white rounded-lg shadow-lg p-6 space-y-4"
+      >
+        <h1 className="text-2xl font-bold text-gray-700 text-center">
+          Welcome Back!
+        </h1>
+        <p className="text-sm text-gray-500 text-center">
+          Please sign in to your account
+        </p>
+        {error && (
+          <p className="text-sm text-red-500 bg-red-100 p-2 rounded">{error}</p>
+        )}
+        <div className="space-y-2">
+          <label
+            htmlFor="email"
+            className="block text-gray-600 text-sm font-medium"
+          >
+            Email
+          </label>
+          <input
+            type="email"
+            id="email"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <label
+            htmlFor="password"
+            className="block text-gray-600 text-sm font-medium"
+          >
+            Password
+          </label>
+          <input
+            type="password"
+            id="password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+            required
+          />
+        </div>
         <button
           type="submit"
           disabled={loading}
-          className="w-full p-2 bg-green-500 text-white rounded"
+          className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200"
         >
           {loading ? "Logging in..." : "Login"}
         </button>
+        <div className="text-center text-sm text-gray-500">
+          Don't have an account?{" "}
+          <a
+            href="/register"
+            className="text-blue-600 hover:underline focus:outline-none"
+          >
+            Sign up
+          </a>
+        </div>
       </form>
     </div>
   );
