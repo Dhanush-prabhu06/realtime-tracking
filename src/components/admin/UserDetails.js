@@ -43,7 +43,7 @@ const UserDetails = () => {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <h1 className="text-4xl font-bold mb-6 text-center text-blue-600">
-        Admin Panel
+        User details
       </h1>
       {error && <p className="text-red-500">{error}</p>}
       {loading ? (

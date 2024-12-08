@@ -14,8 +14,8 @@ const Map = ({ locations, currentDriverId }) => {
             position={{ lat: loc.latitude, lng: loc.longitude }}
             icon={
               loc.id === currentDriverId
-                ? "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
-                : "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
+                ? "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
+                : "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
             }
           />
         ))}

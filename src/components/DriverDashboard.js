@@ -1,38 +1,44 @@
 import React, { useState, useEffect } from "react";
-import { ref, set, onValue } from "firebase/database";
-import { database, auth } from "../firebase";
+import { ref, onValue } from "firebase/database";
+import { auth } from "../firebase";
 import Map from "./Map";
+import { database } from "../firebase";
+import {
+  updateDriverLocation,
+  recordLastLocation,
+  clearDriverData, // Correct function name
+} from "../LocationService";
 
 const DriverDashboard = () => {
   const [isSharing, setIsSharing] = useState(false);
   const [locations, setLocations] = useState([]);
+  const [lastLocation, setLastLocation] = useState({});
   const driverId = auth.currentUser?.uid; // Unique driver ID
 
-  // Toggle sharing
   const toggleSharing = () => setIsSharing(!isSharing);
 
-  // Update location
-  const updateLocation = (position) => {
+  const getCurrentLocation = (position) => {
     const { latitude, longitude } = position.coords;
-    set(ref(database, `drivers/${driverId}`), {
-      latitude,
-      longitude,
-      timestamp: Date.now(),
-    });
+    setLastLocation({ latitude, longitude });
+    updateDriverLocation(driverId, { latitude, longitude });
   };
 
   useEffect(() => {
-    let watchId;
+    let locationInterval;
+
     if (isSharing) {
-      watchId = navigator.geolocation.watchPosition(updateLocation);
+      locationInterval = setInterval(() => {
+        navigator.geolocation.getCurrentPosition(getCurrentLocation);
+      }, 10000);
     } else {
-      set(ref(database, `drivers/${driverId}`), null);
-      if (watchId) navigator.geolocation.clearWatch(watchId);
+      clearInterval(locationInterval);
+      recordLastLocation(driverId, lastLocation);
     }
+
     return () => {
-      if (watchId) navigator.geolocation.clearWatch(watchId);
+      if (locationInterval) clearInterval(locationInterval);
     };
-  }, [isSharing]);
+  }, [isSharing, lastLocation]);
 
   useEffect(() => {
     const locationsRef = ref(database, "drivers");

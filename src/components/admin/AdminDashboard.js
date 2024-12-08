@@ -22,7 +22,6 @@ const AdminDashboard = () => {
         <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">
           Admin Dashboard
         </h1>
-
         <div className="flex justify-center space-x-4 mb-8">
           <button className="px-6 py-2 text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700">
             <a href="/admin/driverDetails" className="font-medium">
@@ -36,7 +35,6 @@ const AdminDashboard = () => {
             </a>
           </button>
         </div>
-
         <div className="mt-6">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Driver Locations
