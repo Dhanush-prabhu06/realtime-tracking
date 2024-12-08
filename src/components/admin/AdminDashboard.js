@@ -52,6 +52,19 @@ const AdminDashboard = () => {
   return (
     <div className="p-4">
       <h1 className="text-xl font-bold">Admin Dashboard</h1>
+      <div className="flex justify-center space-x-4 mb-8">
+        <button className="px-6 py-2 text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700">
+          <a href="/admin/driverDetails" className="font-medium">
+            View Driver Details
+          </a>
+        </button>
+
+        <button className="px-6 py-2 text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700">
+          <a href="/admin/userDetails" className="font-medium">
+            View User Details
+          </a>
+        </button>
+      </div>
       <div className="mt-4">
         <LoadScript googleMapsApiKey="AIzaSyBC6jH0EHIKMEck4lNROeKGExDzDHlfDkQ">
           <GoogleMap
