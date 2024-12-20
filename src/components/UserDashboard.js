@@ -1,6 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { auth, firestore } from "../firebase";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
+import { ref, get } from "firebase/database";
+import { auth, firestore, database } from "../firebase";
 import { useNavigate } from "react-router-dom";
 import { GoogleMap, useJsApiLoader, Marker } from "@react-google-maps/api";
 
@@ -18,9 +27,16 @@ const UserDashboard = () => {
   const [longitude, setLongitude] = useState(null);
   const [mapCenter, setMapCenter] = useState(null);
 
+  const [driverUid, setDriverUid] = useState("");
+  const [driverLatitude, setDriverLatitude] = useState(null);
+  const [driverLongitude, setDriverLongitude] = useState(null);
+
   const [locationError, setLocationError] = useState("");
   const [locationSuccess, setLocationSuccess] = useState("");
   const [isUpdatingLocation, setIsUpdatingLocation] = useState(false);
+
+  const [travelDistance, setTravelDistance] = useState(null);
+  const [travelDuration, setTravelDuration] = useState(null);
 
   const navigate = useNavigate();
   const { isLoaded } = useJsApiLoader({
@@ -43,7 +59,7 @@ const UserDashboard = () => {
           const data = userDoc.data();
           setUserData(data);
 
-          const { busStopLocation } = data;
+          const { busStopLocation, busNumber } = data;
           if (busStopLocation) {
             setLatitude(busStopLocation.latitude);
             setLongitude(busStopLocation.longitude);
@@ -51,6 +67,10 @@ const UserDashboard = () => {
               lat: busStopLocation.latitude,
               lng: busStopLocation.longitude,
             });
+          }
+
+          if (busNumber) {
+            await fetchDriverData(busNumber);
           }
         } else {
           setError("User data not found!");
@@ -63,8 +83,75 @@ const UserDashboard = () => {
       }
     };
 
+    const fetchDriverData = async (busNumber) => {
+      try {
+        // Query Firestore to find the driver with the given bus number
+        const driverQuery = query(
+          collection(firestore, "drivers"),
+          where("busNumber", "==", busNumber)
+        );
+        const driverSnapshot = await getDocs(driverQuery);
+
+        if (!driverSnapshot.empty) {
+          const driverDoc = driverSnapshot.docs[0];
+          const driverData = driverDoc.data();
+
+          const driverUid = driverData.uid; // UID is the document ID
+          setDriverUid(driverUid);
+
+          // Fetch driver's location from Realtime Database
+          const driverLocationRef = ref(database, `drivers/${driverUid}`);
+          const driverLocationSnapshot = await get(driverLocationRef);
+
+          if (driverLocationSnapshot.exists()) {
+            const { latitude, longitude } = driverLocationSnapshot.val();
+            setDriverLatitude(latitude);
+            setDriverLongitude(longitude);
+          } else {
+            console.error("Driver location not found in Realtime Database.");
+          }
+        } else {
+          console.error("No driver found for the given bus number.");
+        }
+      } catch (err) {
+        console.error("Error fetching driver data:", err);
+      }
+    };
+
     fetchUserData();
   }, [navigate]);
+
+  useEffect(() => {
+    if (driverLatitude && driverLongitude && latitude && longitude) {
+      fetchTravelDetails(driverLatitude, driverLongitude, latitude, longitude);
+    }
+  }, [driverLatitude, driverLongitude, latitude, longitude]);
+
+  const fetchTravelDetails = async (driverLat, driverLng, stopLat, stopLng) => {
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${driverLat},${driverLng}&destinations=${stopLat},${stopLng}&mode=driving&key=AIzaSyBC6jH0EHIKMEck4lNROeKGExDzDHlfDkQ`
+      );
+      const data = await response.json();
+
+      console.log(response);
+
+      if (data.rows[0]?.elements[0]?.status === "OK") {
+        const distance = data.rows[0].elements[0].distance.text; // e.g., "15 km"
+        const duration = data.rows[0].elements[0].duration.text; // e.g., "20 mins"
+        setTravelDistance(distance);
+        setTravelDuration(duration);
+      } else {
+        console.error("Error fetching travel details:", data);
+        setTravelDistance("Unavailable");
+        setTravelDuration("Unavailable");
+      }
+    } catch (error) {
+      console.error("Error during travel details API call:", error);
+      setTravelDistance("Error");
+      setTravelDuration("Error");
+    }
+  };
 
   const handleLocationUpdate = async () => {
     setLocationError("");
@@ -161,6 +248,24 @@ const UserDashboard = () => {
         </div>
 
         <h2 className="text-xl font-bold text-gray-800 mt-8">
+          Driver Information
+        </h2>
+        <div className="space-y-4">
+          <div>
+            <span className="font-medium text-gray-700">Driver UID:</span>{" "}
+            {driverUid || "Not retrieved"}
+          </div>
+          <div>
+            <span className="font-medium text-gray-700">Driver Latitude:</span>{" "}
+            {driverLatitude !== null ? driverLatitude : "Not retrieved"}
+          </div>
+          <div>
+            <span className="font-medium text-gray-700">Driver Longitude:</span>{" "}
+            {driverLongitude !== null ? driverLongitude : "Not retrieved"}
+          </div>
+        </div>
+
+        <h2 className="text-xl font-bold text-gray-800 mt-8">
           Bus Stop Location
         </h2>
 
@@ -214,6 +319,20 @@ const UserDashboard = () => {
             </div>
           )
         )}
+
+        <h2 className="text-xl font-bold text-gray-800 mt-8">
+          Travel Information
+        </h2>
+        <div className="space-y-4">
+          <div>
+            <span className="font-medium text-gray-700">Distance:</span>{" "}
+            {travelDistance || "Calculating..."}
+          </div>
+          <div>
+            <span className="font-medium text-gray-700">Estimated Time:</span>{" "}
+            {travelDuration || "Calculating..."}
+          </div>
+        </div>
 
         {/* Error/Success Messages */}
         {locationError && <p className="text-red-500 mt-4">{locationError}</p>}
