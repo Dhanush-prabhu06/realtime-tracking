@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { ref, onValue } from "firebase/database";
+import {
+  ref,
+  query,
+  orderByChild,
+  equalTo,
+  onValue,
+  get,
+} from "firebase/database";
 import { database } from "../../firebase"; // Adjust import path for your project setup
 import {
   GoogleMap,
@@ -7,6 +14,7 @@ import {
   Marker,
   InfoWindow,
 } from "@react-google-maps/api";
+import { useNavigate } from "react-router-dom";
 
 const AdminDashboard = () => {
   const [locations, setLocations] = useState([]);
@@ -16,6 +24,27 @@ const AdminDashboard = () => {
     lng: 77.123847, // Default longitude
   });
   const [mapRef, setMapRef] = useState(null);
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+
+      if (!loggedInUser) {
+        navigate("/"); // Redirect to login if not logged in
+        return;
+      }
+
+      const currentUserRole = loggedInUser.role;
+
+      if (currentUserRole !== "admin") {
+        navigate("/"); // Redirect to login if role is not admin
+      }
+    };
+
+    checkAuth();
+  }, [navigate]);
 
   // Map styles
   const mapStyles = { height: "630px", width: "100%" };
@@ -27,6 +56,7 @@ const AdminDashboard = () => {
       const data = snapshot.val();
       if (data) {
         setLocations(Object.entries(data).map(([id, loc]) => ({ id, ...loc })));
+        console.log(locations);
       }
     });
 
@@ -38,40 +68,87 @@ const AdminDashboard = () => {
     setMapRef(map);
   };
 
-  // Function to manually recenter the map
-  const handleMarkerClick = (driver) => {
-    setSelectedDriver(driver);
-    if (mapRef) {
-      mapRef.panTo({
-        lat: driver.latitude,
-        lng: driver.longitude,
-      });
+  // Function to fetch driver details by UID
+  const fetchDriverDetails = async (uid) => {
+    try {
+      const driversRef = ref(database, "drivers");
+      const driverQuery = query(driversRef, orderByChild("uid"), equalTo(uid));
+      const snapshot = await get(driverQuery);
+
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const driverId = Object.keys(data)[0]; // Get the key
+
+        return data[driverId]; // Return driver details
+      } else {
+        console.error("Driver not found!");
+        return null;
+      }
+    } catch (error) {
+      console.error("Error fetching driver details:", error);
+      return null;
     }
   };
 
+  // Function to handle marker click
+  const handleMarkerClick = async (driver) => {
+    setSelectedDriver(driver); // Set basic info immediately
+
+    // Fetch additional details and update state
+    const driverDetails = await fetchDriverDetails(driver.id);
+    if (driverDetails) {
+      setSelectedDriver({
+        ...driver,
+        driverName: driverDetails.driverName, // Include driver name
+        busNumber: driverDetails.busNumber, // Include bus number
+      });
+
+      if (mapRef) {
+        mapRef.panTo({
+          lat: driver.latitude,
+          lng: driver.longitude,
+        });
+      }
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/");
+  };
+
   return (
-    <div className="p-4">
+    <div className="relative p-4">
+      {/* Logout Button */}
+      <button
+        onClick={handleLogout}
+        className="absolute top-4 right-4 px-4 py-2 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600"
+      >
+        Logout
+      </button>
+
       <h1 className="text-xl font-bold">Admin Dashboard</h1>
+
       <div className="flex justify-center space-x-4 mb-8">
         <button className="px-6 py-2 text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700">
           <a href="/admin/driverDetails" className="font-medium">
             View Driver Details
           </a>
         </button>
-
         <button className="px-6 py-2 text-white bg-green-600 rounded-lg shadow-md hover:bg-green-700">
           <a href="/admin/userDetails" className="font-medium">
             View User Details
           </a>
         </button>
       </div>
+
       <div className="mt-4">
         <LoadScript googleMapsApiKey="AIzaSyBC6jH0EHIKMEck4lNROeKGExDzDHlfDkQ">
           <GoogleMap
             mapContainerStyle={mapStyles}
             zoom={10}
-            center={mapCenter} // Use static center; this will not change on updates
-            onLoad={onMapLoad} // Capture map instance
+            center={mapCenter}
+            onLoad={onMapLoad}
           >
             {locations.map((driver) => (
               <Marker
@@ -91,7 +168,11 @@ const AdminDashboard = () => {
                 onCloseClick={() => setSelectedDriver(null)}
               >
                 <div>
-                  <h2>Driver ID: {selectedDriver.id}</h2>
+                  <h2>
+                    Driver Name: {selectedDriver.driverName || "Loading..."}
+                  </h2>
+                  <p>Bus Number: {selectedDriver.busNumber || "Loading..."}</p>
+                  <p>Driver ID: {selectedDriver.id}</p>
                   <p>Latitude: {selectedDriver.latitude}</p>
                   <p>Longitude: {selectedDriver.longitude}</p>
                 </div>

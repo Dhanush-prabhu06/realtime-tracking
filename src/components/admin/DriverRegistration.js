@@ -11,6 +11,7 @@ const DriverRegistration = () => {
     busNumber: "",
     vehicleNumber: "",
     driverName: "",
+    phoneNumber: "", // Added phone number
     area: "",
     capacity: "",
     route: "",
@@ -46,6 +47,7 @@ const DriverRegistration = () => {
         busNumber: formData.busNumber,
         vehicleNumber: formData.vehicleNumber,
         driverName: formData.driverName,
+        phoneNumber: formData.phoneNumber, // Added phone number
         area: formData.area,
         capacity: formData.capacity,
         route: formData.route,
@@ -66,6 +68,7 @@ const DriverRegistration = () => {
         busNumber: "",
         vehicleNumber: "",
         driverName: "",
+        phoneNumber: "", // Reset phone number field
         area: "",
         capacity: "",
         route: "",
@@ -165,6 +168,23 @@ const DriverRegistration = () => {
             id="driverName"
             name="driverName"
             value={formData.driverName}
+            onChange={handleInputChange}
+            className="block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900"
+            required
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="phoneNumber"
+            className="block mb-1 text-sm font-medium text-gray-700"
+          >
+            Phone Number
+          </label>
+          <input
+            type="text"
+            id="phoneNumber"
+            name="phoneNumber"
+            value={formData.phoneNumber}
             onChange={handleInputChange}
             className="block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900"
             required

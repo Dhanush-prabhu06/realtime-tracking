@@ -6,12 +6,11 @@ import {
   doc,
   updateDoc,
   deleteDoc,
-  addDoc,
-  serverTimestamp,
 } from "firebase/firestore";
 import { firestore } from "../../firebase";
+import { FiPhone } from "react-icons/fi"; // Import phone icon
 
-const DriverList = () => {
+const DriverDetails = () => {
   const [drivers, setDrivers] = useState([]);
   const [expandedCard, setExpandedCard] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -58,34 +57,6 @@ const DriverList = () => {
     }
   };
 
-  // Open Edit Modal
-  const openEditModal = (driver) => {
-    setEditingDriver(driver);
-    setEditedData({ ...driver });
-  };
-
-  // Close Edit Modal
-  const closeEditModal = () => {
-    setEditingDriver(null);
-    setEditedData({});
-  };
-
-  // Handle Edit Save
-  const handleEditSave = async () => {
-    try {
-      const driverRef = doc(firestore, "drivers", editingDriver.id);
-      await updateDoc(driverRef, editedData);
-      setDrivers((prev) =>
-        prev.map((driver) =>
-          driver.id === editingDriver.id ? { ...driver, ...editedData } : driver
-        )
-      );
-      closeEditModal();
-    } catch (error) {
-      console.error("Error updating driver:", error);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -118,7 +89,7 @@ const DriverList = () => {
             onClick={() => toggleCard(driver.id)}
           >
             {/* Basic Details */}
-            <div className="flex items-center gap-4 hover:cursor-pointer">
+            <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold text-lg">
                 {driver.driverName[0]}
               </div>
@@ -130,6 +101,14 @@ const DriverList = () => {
                   Bus Number: {driver.busNumber}
                 </p>
               </div>
+              {/* Telephone Icon */}
+              <a
+                href={`tel:${driver.phoneNumber}`}
+                className="ml-auto text-blue-500 hover:text-blue-700 transition-colors"
+                onClick={(e) => e.stopPropagation()} // Prevent card toggle
+              >
+                <FiPhone size={24} />
+              </a>
             </div>
 
             {/* Divider */}
@@ -143,6 +122,12 @@ const DriverList = () => {
                     User ID:
                   </strong>{" "}
                   {driver.userId}
+                </p>
+                <p>
+                  <strong className="font-medium text-gray-700">
+                    Phone Number:
+                  </strong>{" "}
+                  {driver.phoneNumber}
                 </p>
                 <p>
                   <strong className="font-medium text-gray-700">
@@ -176,91 +161,13 @@ const DriverList = () => {
                     ? driver.createdAt.toLocaleString()
                     : "Not Available"}
                 </p>
-
-                {/* Action Buttons */}
-                <div className="flex gap-4 mt-4">
-                  <button
-                    className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent toggle on edit click
-                      openEditModal(driver);
-                    }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent toggle on delete click
-                      handleDelete(driver.id);
-                    }}
-                  >
-                    Delete
-                  </button>
-                </div>
               </div>
             )}
           </div>
         ))}
       </div>
-
-      {/* Edit Modal */}
-      {editingDriver && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-md shadow-md w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">Edit Driver Details</h3>
-            <form>
-              {Object.keys(editedData).map((key) => {
-                const isEditable = !["role", "userId", "uid"].includes(key);
-                return (
-                  key !== "id" &&
-                  key !== "createdAt" && (
-                    <div key={key} className="mb-4">
-                      <label
-                        htmlFor={key}
-                        className="block text-sm font-medium text-gray-700 mb-1"
-                      >
-                        {key.charAt(0).toUpperCase() + key.slice(1)}
-                      </label>
-                      <input
-                        type="text"
-                        id={key}
-                        value={editedData[key] || ""}
-                        onChange={(e) =>
-                          setEditedData((prev) => ({
-                            ...prev,
-                            [key]: e.target.value,
-                          }))
-                        }
-                        disabled={!isEditable}
-                        className={`block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${
-                          !isEditable ? "bg-gray-200 cursor-not-allowed" : ""
-                        }`}
-                      />
-                    </div>
-                  )
-                );
-              })}
-            </form>
-            <div className="flex gap-4 mt-4">
-              <button
-                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-                onClick={handleEditSave}
-              >
-                Save
-              </button>
-              <button
-                className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
-                onClick={closeEditModal}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-export default DriverList;
+export default DriverDetails;

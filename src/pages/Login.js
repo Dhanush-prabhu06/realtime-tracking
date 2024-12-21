@@ -26,6 +26,11 @@ const Login = () => {
     try {
       // Hardcoded Admin Login
       if (email === "admin@gmail.com" && password === "123456") {
+        // Store admin details in local storage
+        localStorage.setItem(
+          "loggedInUser",
+          JSON.stringify({ role: "admin", email })
+        );
         navigate("/admin");
         return;
       }
@@ -42,6 +47,11 @@ const Login = () => {
       const userDoc = await getDoc(doc(firestore, "users", user.uid));
 
       if (userDoc.exists()) {
+        // Store user details in local storage
+        localStorage.setItem(
+          "loggedInUser",
+          JSON.stringify({ role: "user", email: user.email, uid: user.uid })
+        );
         navigate("/user"); // Redirect normal users to user dashboard
       } else {
         // If not in "users", query the "drivers" collection
@@ -52,6 +62,11 @@ const Login = () => {
         const driverSnapshot = await getDocs(driverQuery);
 
         if (!driverSnapshot.empty) {
+          // Store driver details in local storage
+          localStorage.setItem(
+            "loggedInUser",
+            JSON.stringify({ role: "driver", email: user.email, uid: user.uid })
+          );
           navigate("/driver"); // Redirect drivers to driver dashboard
         } else {
           throw new Error("User or driver data not found!");
