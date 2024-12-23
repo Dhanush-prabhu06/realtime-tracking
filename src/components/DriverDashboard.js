@@ -103,10 +103,28 @@ const DriverDashboard = () => {
     });
   }, []);
 
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/");
+  };
+
   return (
-    <div className="p-4">
+    <div className="relative p-4">
+      {/* Logout Button */}
+      <button
+        onClick={handleLogout}
+        className="absolute top-4 right-4 px-4 py-2 bg-red-500 text-white font-semibold rounded-md hover:bg-red-600"
+      >
+        Logout
+      </button>
       <h1 className="text-xl font-bold">Driver Dashboard</h1>
       <div className="flex justify-center space-x-4 mb-8">
+        <button
+          className="px-6 py-2 text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700"
+          onClick={() => navigate("/driver/profile")}
+        >
+          Profile
+        </button>
         <button className="px-6 py-2 text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700">
           <a href="/driver/list" className="font-medium">
             Driver List

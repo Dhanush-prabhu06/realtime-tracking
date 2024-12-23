@@ -9,6 +9,8 @@ import DriverRegistration from "./components/admin/DriverRegistration";
 import UserDetails from "./components/admin/UserDetails";
 import UserDashboard from "./components/UserDashboard";
 import DriverList from "./components/DriverList";
+import AdminProfile from "./components/admin/AdminProfile";
+import DriverProfile from "./components/DriverProfile";
 
 function App() {
   return (
@@ -23,8 +25,10 @@ function App() {
           element={<DriverRegistration />}
         />
         <Route path="/admin/userDetails" element={<UserDetails />} />
+        <Route path="/admin/profile" element={<AdminProfile />} />
         <Route path="/driver" element={<DriverDashboard />} />
         <Route path="/driver/list" element={<DriverList />} />
+        <Route path="/driver/profile" element={<DriverProfile />} />
         <Route path="/user" element={<UserDashboard />} />
       </Routes>
     </Router>

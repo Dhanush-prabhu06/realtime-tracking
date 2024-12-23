@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import {
   doc,
@@ -18,6 +18,28 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Redirect logic on mount
+  useEffect(() => {
+    const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+
+    if (loggedInUser?.role) {
+      switch (loggedInUser.role) {
+        case "admin":
+          navigate("/admin");
+          break;
+        case "driver":
+          navigate("/driver");
+          break;
+        case "user":
+          navigate("/user");
+          break;
+        default:
+          navigate("/");
+          break;
+      }
+    }
+  }, [navigate]);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -26,7 +48,6 @@ const Login = () => {
     try {
       // Hardcoded Admin Login
       if (email === "admin@gmail.com" && password === "123456") {
-        // Store admin details in local storage
         localStorage.setItem(
           "loggedInUser",
           JSON.stringify({ role: "admin", email })
@@ -47,12 +68,11 @@ const Login = () => {
       const userDoc = await getDoc(doc(firestore, "users", user.uid));
 
       if (userDoc.exists()) {
-        // Store user details in local storage
         localStorage.setItem(
           "loggedInUser",
           JSON.stringify({ role: "user", email: user.email, uid: user.uid })
         );
-        navigate("/user"); // Redirect normal users to user dashboard
+        navigate("/user");
       } else {
         // If not in "users", query the "drivers" collection
         const driverQuery = query(
@@ -62,12 +82,11 @@ const Login = () => {
         const driverSnapshot = await getDocs(driverQuery);
 
         if (!driverSnapshot.empty) {
-          // Store driver details in local storage
           localStorage.setItem(
             "loggedInUser",
             JSON.stringify({ role: "driver", email: user.email, uid: user.uid })
           );
-          navigate("/driver"); // Redirect drivers to driver dashboard
+          navigate("/driver");
         } else {
           throw new Error("User or driver data not found!");
         }

@@ -140,6 +140,11 @@ const AdminDashboard = () => {
             View User Details
           </a>
         </button>
+        <button className="px-6 py-2 text-white bg-purple-600 rounded-lg shadow-md hover:bg-purple-700">
+          <a href="/admin/profile" className="font-medium">
+            View Profile
+          </a>
+        </button>
       </div>
 
       <div className="mt-4">
