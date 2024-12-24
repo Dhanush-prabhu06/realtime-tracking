@@ -11,6 +11,7 @@ import UserDashboard from "./components/UserDashboard";
 import DriverList from "./components/DriverList";
 import AdminProfile from "./components/admin/AdminProfile";
 import DriverProfile from "./components/DriverProfile";
+import SOS from "./components/SOS";
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
         <Route path="/driver" element={<DriverDashboard />} />
         <Route path="/driver/list" element={<DriverList />} />
         <Route path="/driver/profile" element={<DriverProfile />} />
+        <Route path="/driver/sos" element={<SOS />} />
         <Route path="/user" element={<UserDashboard />} />
       </Routes>
     </Router>

@@ -108,6 +108,15 @@ const DriverDashboard = () => {
     navigate("/");
   };
 
+  const handleEmergencyClick = () => {
+    const driverData = JSON.parse(localStorage.getItem("loggedInUser"));
+    const { driverName, busNumber } = driverData || {};
+
+    console.log(driverName);
+    console.log(busNumber);
+    navigate("/driver/sos");
+  };
+
   return (
     <div className="relative p-4">
       {/* Logout Button */}
@@ -125,10 +134,17 @@ const DriverDashboard = () => {
         >
           Profile
         </button>
-        <button className="px-6 py-2 text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700">
-          <a href="/driver/list" className="font-medium">
-            Driver List
-          </a>
+        <button
+          className="px-6 py-2 text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700"
+          onClick={() => navigate("/driver/list")}
+        >
+          Driver List
+        </button>
+        <button
+          onClick={handleEmergencyClick}
+          className="px-6 py-3 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
+        >
+          Emergency
         </button>
       </div>
 

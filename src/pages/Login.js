@@ -84,7 +84,12 @@ const Login = () => {
         if (!driverSnapshot.empty) {
           localStorage.setItem(
             "loggedInUser",
-            JSON.stringify({ role: "driver", email: user.email, uid: user.uid })
+            JSON.stringify({
+              role: "driver",
+              email: user.email,
+              uid: user.uid,
+              ...driverSnapshot.docs[0].data(),
+            })
           );
           navigate("/driver");
         } else {
