@@ -5,6 +5,7 @@ import Map from "./Map";
 import { updateDriverLocation, recordLastLocation } from "../LocationService";
 import { database } from "../firebase";
 import { useNavigate } from "react-router-dom";
+import VoiceCommunication from "./communication/VoiceCommunication";
 
 const DriverDashboard = () => {
   const [isSharing, setIsSharing] = useState(false);
@@ -15,6 +16,8 @@ const DriverDashboard = () => {
     lng: 77.123847,
   }); // Default center
 
+  const [currentDriver, setCurrentDriver] = useState(null);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,7 +25,6 @@ const DriverDashboard = () => {
       const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
 
       if (!loggedInUser) {
-        // If no user is logged in, redirect to the login page
         navigate("/");
         return;
       }
@@ -31,9 +33,11 @@ const DriverDashboard = () => {
       const currentUserRole = loggedInUser.role;
 
       if (!currentUserUid || currentUserRole !== "driver") {
-        // If UID is missing or role is not 'driver', redirect to login
         navigate("/");
+        return;
       }
+
+      setCurrentDriver(loggedInUser);
     };
 
     checkAuth();
@@ -147,6 +151,14 @@ const DriverDashboard = () => {
           Emergency
         </button>
       </div>
+
+      {/* Only render VoiceCommunication if we have currentDriver data */}
+      {currentDriver && (
+        <VoiceCommunication
+          driverId={currentDriver.uid}
+          driverName={currentDriver.driverName}
+        />
+      )}
 
       <label className="flex items-center mt-4">
         <span>Share Location:</span>
