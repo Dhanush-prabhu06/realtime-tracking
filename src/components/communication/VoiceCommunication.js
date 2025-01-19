@@ -11,12 +11,35 @@ const VoiceCommunication = ({ driverId, driverName }) => {
   const appId = "360b82d858e442b1af33093eb3b3781b"; // Replace with your Agora App ID
   const channelName = "driver_channel"; // You can make this dynamic based on area/route
 
+  //   useEffect(() => {
+  //     // Initialize Agora client
+  //     const agoraClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+  //     setClient(agoraClient);
+
+  //     // Cleanup function
+  //     return () => {
+  //       if (localAudioTrack) {
+  //         localAudioTrack.close();
+  //       }
+  //       if (client) {
+  //         client.leave();
+  //       }
+  //     };
+  //   }, []);
+
   useEffect(() => {
-    // Initialize Agora client
-    const agoraClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+    // Initialize Agora client with specific playback config
+    const agoraClient = AgoraRTC.createClient({
+      mode: "rtc",
+      codec: "vp8",
+      role: "host",
+    });
+
+    // Set the audio output configuration
+    AgoraRTC.setParameter("AUDIO_OUTPUT_TYPE", 2); // Force speaker output
+
     setClient(agoraClient);
 
-    // Cleanup function
     return () => {
       if (localAudioTrack) {
         localAudioTrack.close();
@@ -56,9 +79,27 @@ const VoiceCommunication = ({ driverId, driverName }) => {
     try {
       if (!client) return;
       const uid = await client.join(appId, channelName, null, driverId);
-      const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+
+      // Create audio track with specific configurations
+      const audioTrack = await AgoraRTC.createMicrophoneAudioTrack({
+        encoderConfig: {
+          sampleRate: 48000,
+          stereo: true,
+          bitrate: 128,
+        },
+        AEC: true, // Echo cancellation
+        AGC: true, // Auto gain control
+        ANS: true, // Noise suppression
+        audioOptimizationMode: "VoiceCall", // Optimize for voice
+        speakerphone: true, // Force speaker output
+      });
+
+      // Set playback device to speaker
+      await audioTrack.setPlaybackDevice("speaker");
+
       setLocalAudioTrack(audioTrack);
       await client.publish(audioTrack);
+
       setJoined(true);
       setError("");
     } catch (err) {
