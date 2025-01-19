@@ -7,16 +7,38 @@ const VoiceCommunication = ({ driverId, driverName }) => {
   const [joined, setJoined] = useState(false);
   const [muted, setMuted] = useState(false);
   const [error, setError] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
 
-  const appId = "360b82d858e442b1af33093eb3b3781b"; // Replace with your Agora App ID
-  const channelName = "driver_channel"; // You can make this dynamic based on area/route
+  const appId = "360b82d858e442b1af33093eb3b3781b";
+  const channelName = "driver_channel";
 
   useEffect(() => {
-    // Initialize Agora client
-    const agoraClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+    // Check if device is mobile
+    const checkMobile = () => {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      );
+    };
+    setIsMobile(checkMobile());
+
+    // Initialize Agora client with basic config for mobile
+    const agoraClient = AgoraRTC.createClient({
+      mode: "rtc",
+      codec: "vp8",
+      role: "host",
+    });
+
+    // Only set speaker output on desktop browsers
+    if (!checkMobile()) {
+      try {
+        AgoraRTC.setParameter("AUDIO_OUTPUT_TYPE", 2);
+      } catch (err) {
+        console.warn("Failed to set audio output type:", err);
+      }
+    }
+
     setClient(agoraClient);
 
-    // Cleanup function
     return () => {
       if (localAudioTrack) {
         localAudioTrack.close();
@@ -56,13 +78,38 @@ const VoiceCommunication = ({ driverId, driverName }) => {
     try {
       if (!client) return;
       const uid = await client.join(appId, channelName, null, driverId);
-      const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+
+      // Create audio track with optimized settings for both mobile and desktop
+      const audioTrack = await AgoraRTC.createMicrophoneAudioTrack({
+        encoderConfig: {
+          sampleRate: 48000,
+          stereo: false, // Set to false for better mobile compatibility
+          bitrate: 64, // Lower bitrate for mobile
+        },
+        AEC: true,
+        AGC: true,
+        ANS: true,
+        audioOptimizationMode: "VoiceCall",
+      });
+
+      // Only attempt to set playback device on desktop browsers
+      if (!isMobile) {
+        try {
+          await audioTrack.setPlaybackDevice("speaker");
+        } catch (err) {
+          console.warn("Failed to set playback device:", err);
+          // Continue anyway as this is not critical
+        }
+      }
+
       setLocalAudioTrack(audioTrack);
       await client.publish(audioTrack);
+
       setJoined(true);
       setError("");
     } catch (err) {
-      setError("Failed to join voice channel: " + err.message);
+      setError(`Failed to join voice channel: ${err.message}`);
+      console.error("Join channel error:", err);
     }
   };
 
@@ -98,6 +145,9 @@ const VoiceCommunication = ({ driverId, driverName }) => {
         <h2 className="text-xl font-bold text-gray-800">
           Driver Voice Communication
         </h2>
+        {isMobile && (
+          <p className="text-sm text-gray-600 mt-2">Running in mobile mode</p>
+        )}
       </div>
 
       <div className="space-y-4">
