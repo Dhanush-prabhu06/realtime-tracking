@@ -10,7 +10,7 @@ const VoiceCommunication = ({ driverId, driverName }) => {
   const [isMobile, setIsMobile] = useState(false);
 
   const appId = "360b82d858e442b1af33093eb3b3781b";
-  const channelName = "driver_channel";
+  const channelName = { driverName };
 
   useEffect(() => {
     // Check if device is mobile
