@@ -469,7 +469,7 @@ const VoiceCommunication = () => {
         {/* Header */}
         <div className="flex items-center mb-8">
           <button
-            onClick={() => navigate("/driver/dashboard")}
+            onClick={() => navigate("/driver")}
             className="mr-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
             <ArrowLeft className="w-6 h-6 text-gray-600" />

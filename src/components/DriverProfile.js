@@ -159,7 +159,9 @@ const DriverProfile = () => {
                 <h1 className="text-2xl font-bold text-white">
                   Driver Profile
                 </h1>
-                <p className="text-blue-100 mt-1">ID: {profile.uid}</p>
+                <p className="text-blue-100 mt-1">
+                  Bus Number: {profile.busNumber}
+                </p>
               </div>
               <div className="h-20 w-20 rounded-full bg-white/10 flex items-center justify-center">
                 <Bus size={32} className="text-white" />
