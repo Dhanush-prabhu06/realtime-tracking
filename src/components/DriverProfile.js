@@ -1,27 +1,37 @@
 import React, { useState, useEffect } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { Circles } from "react-loader-spinner";
-import { firestore } from "../firebase"; // Adjust the path to your Firebase config
+import { firestore } from "../firebase";
+import {
+  ArrowLeft,
+  Mail,
+  Phone,
+  Bus,
+  MapPin,
+  Hash,
+  Users,
+  Route,
+  Building,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const DriverProfile = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchDriverProfile = async () => {
       try {
-        // Get logged-in user details from localStorage
         const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
 
-        // Check if the logged-in user is a driver
         if (!loggedInUser || loggedInUser.role !== "driver") {
           setError("Unauthorized access! Please log in.");
           setLoading(false);
           return;
         }
 
-        // Query Firestore to fetch the driver's full profile based on the uid
         const driverQuery = query(
           collection(firestore, "drivers"),
           where("uid", "==", loggedInUser.uid)
@@ -30,7 +40,7 @@ const DriverProfile = () => {
 
         if (!driverSnapshot.empty) {
           const driverData = driverSnapshot.docs[0].data();
-          setProfile(driverData); // Store the driver details in state
+          setProfile(driverData);
         } else {
           setError("Driver profile not found!");
         }
@@ -47,70 +57,161 @@ const DriverProfile = () => {
     fetchDriverProfile();
   }, []);
 
-  // Show loading spinner
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <Circles color="#4A90E2" height={80} width={80} />
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <Circles color="#3B82F6" height={80} width={80} />
+          <p className="mt-4 text-gray-600">Loading your profile...</p>
+        </div>
       </div>
     );
   }
 
-  // Show error message if any
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
-        <div className="max-w-md bg-white rounded-lg shadow-lg p-6 text-center">
-          <h1 className="text-xl font-semibold text-red-500">{error}</h1>
-          <p className="text-gray-600 mt-4">Please check and try again.</p>
-          <button
-            onClick={() => (window.location.href = "/login")}
-            className="mt-6 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
-          >
-            Go to Login
-          </button>
+      <div className="min-h-screen bg-gray-50 px-4 py-12">
+        <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+          <div className="p-8">
+            <div className="flex items-center justify-center w-16 h-16 mx-auto bg-red-100 rounded-full">
+              <span className="text-2xl text-red-500">!</span>
+            </div>
+            <h1 className="mt-4 text-xl font-semibold text-center text-red-500">
+              {error}
+            </h1>
+            <p className="mt-2 text-gray-600 text-center">
+              Please check and try again.
+            </p>
+            <div className="mt-6 flex justify-center">
+              <button
+                onClick={() => navigate("/login")}
+                className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+              >
+                Go to Login
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Profile fields to display
-  const profileFields = [
-    { label: "Name", value: profile.driverName },
-    { label: "Email", value: profile.userId },
-    { label: "Phone Number", value: profile.phoneNumber },
-    { label: "Bus Number", value: profile.busNumber },
-    { label: "Route", value: profile.route },
-    { label: "Area", value: profile.area },
-    { label: "Vehicle Number", value: profile.vehicleNumber },
-    { label: "Capacity", value: profile.capacity },
+  const profileSections = [
+    {
+      title: "Personal Information",
+      fields: [
+        { label: "Name", value: profile.driverName, icon: <Users size={20} /> },
+        { label: "Email", value: profile.userId, icon: <Mail size={20} /> },
+        {
+          label: "Phone Number",
+          value: profile.phoneNumber,
+          icon: <Phone size={20} />,
+        },
+      ],
+    },
+    {
+      title: "Vehicle Information",
+      fields: [
+        {
+          label: "Bus Number",
+          value: profile.busNumber,
+          icon: <Bus size={20} />,
+        },
+        {
+          label: "Vehicle Number",
+          value: profile.vehicleNumber,
+          icon: <Hash size={20} />,
+        },
+        {
+          label: "Capacity",
+          value: profile.capacity,
+          icon: <Users size={20} />,
+        },
+      ],
+    },
+    {
+      title: "Route Information",
+      fields: [
+        { label: "Route", value: profile.route, icon: <Route size={20} /> },
+        { label: "Area", value: profile.area, icon: <MapPin size={20} /> },
+      ],
+    },
   ];
 
-  // Show profile information
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-100 to-blue-50 px-4 py-6">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">
-          Driver Profile
-        </h1>
-        <div className="space-y-4">
-          {profileFields.map((field, index) => (
-            <div
-              key={index}
-              className="text-base flex justify-between border-b pb-2"
-            >
-              <span className="font-medium text-gray-600">{field.label}:</span>
-              <span className="text-gray-800">{field.value}</span>
+    <div className="min-h-screen bg-gray-50 px-4 py-8">
+      <div className="max-w-2xl mx-auto">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate(-1)}
+          className="mb-6 flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <ArrowLeft size={20} className="mr-2" />
+          Back to Dashboard
+        </button>
+
+        {/* Profile Card */}
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-white">
+                  Driver Profile
+                </h1>
+                <p className="text-blue-100 mt-1">ID: {profile.uid}</p>
+              </div>
+              <div className="h-20 w-20 rounded-full bg-white/10 flex items-center justify-center">
+                <Bus size={32} className="text-white" />
+              </div>
             </div>
-          ))}
-        </div>
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => alert("Feature coming soon!")}
-            className="px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition"
-          >
-            Edit Profile
-          </button>
+          </div>
+
+          {/* Profile Sections */}
+          <div className="p-6">
+            {profileSections.map((section, sectionIndex) => (
+              <div
+                key={sectionIndex}
+                className={`${sectionIndex > 0 ? "mt-8" : ""}`}
+              >
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                  {section.title}
+                </h2>
+                <div className="space-y-4">
+                  {section.fields.map((field, fieldIndex) => (
+                    <div
+                      key={fieldIndex}
+                      className="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="text-blue-500 mr-3">{field.icon}</div>
+                      <div className="flex-grow">
+                        <p className="text-sm text-gray-500">{field.label}</p>
+                        <p className="text-gray-800 font-medium">
+                          {field.value}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {/* Action Buttons */}
+            <div className="mt-8 flex gap-4">
+              <button
+                onClick={() => alert("Feature coming soon!")}
+                className="flex-1 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Edit Profile
+              </button>
+              <button
+                onClick={() => navigate("/driver/dashboard")}
+                className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                View Dashboard
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
