@@ -82,13 +82,17 @@ const Login = () => {
         const driverSnapshot = await getDocs(driverQuery);
 
         if (!driverSnapshot.empty) {
+          const driverData = driverSnapshot.docs[0].data();
+          const { driverName, busNumber } = driverData; // Assuming 'name' and 'busNumber' are fields in the document
+
           localStorage.setItem(
             "loggedInUser",
             JSON.stringify({
               role: "driver",
               email: user.email,
               uid: user.uid,
-              ...driverSnapshot.docs[0].data(),
+              driverName, // Store driver's name
+              busNumber, // Store bus number
             })
           );
           navigate("/driver");

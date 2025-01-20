@@ -1,22 +1,54 @@
 import React, { useState, useEffect } from "react";
 import AgoraRTC from "agora-rtc-sdk-ng";
+import { UserRound, Mic, MicOff, Phone, PhoneOff } from "lucide-react";
 
-const VoiceCommunication = ({ driverId, driverName }) => {
+const VoiceCommunication = () => {
   const [client, setClient] = useState(null);
   const [localAudioTrack, setLocalAudioTrack] = useState(null);
   const [joined, setJoined] = useState(false);
   const [muted, setMuted] = useState(false);
   const [error, setError] = useState("");
+  const [participants, setParticipants] = useState(new Map());
+  const [activeSpeakers, setActiveSpeakers] = useState(new Set());
+  const [mutedParticipants, setMutedParticipants] = useState(new Set());
+  const [currentDriver, setCurrentDriver] = useState(null);
+  const [busNumbers, setBusNumbers] = useState(new Map());
+  const [usedRandomNumbers] = useState(new Set());
 
-  const appId = "360b82d858e442b1af33093eb3b3781b"; // Replace with your Agora App ID
-  const channelName = "driver_channel"; // You can make this dynamic based on area/route
+  const appId = "360b82d858e442b1af33093eb3b3781b";
+  const channelName = "driver_channel";
+
+  const getRandomBusNumber = () => {
+    const availableNumbers = Array.from({ length: 9 }, (_, i) => i + 1).filter(
+      (num) => !usedRandomNumbers.has(num)
+    );
+
+    if (availableNumbers.length === 0) {
+      usedRandomNumbers.clear();
+      return getRandomBusNumber();
+    }
+
+    const randomIndex = Math.floor(Math.random() * availableNumbers.length);
+    const randomNumber = availableNumbers[randomIndex];
+    usedRandomNumbers.add(randomNumber);
+    return randomNumber.toString();
+  };
 
   useEffect(() => {
-    // Initialize Agora client
+    const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+    if (loggedInUser && loggedInUser.role === "driver") {
+      setCurrentDriver({
+        uid: loggedInUser.uid,
+        busNumber: loggedInUser.busNumber,
+      });
+      setBusNumbers(new Map([[loggedInUser.uid, loggedInUser.busNumber]]));
+    }
+  }, []);
+
+  useEffect(() => {
     const agoraClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
     setClient(agoraClient);
 
-    // Cleanup function
     return () => {
       if (localAudioTrack) {
         localAudioTrack.close();
@@ -34,33 +66,154 @@ const VoiceCommunication = ({ driverId, driverName }) => {
       if (mediaType === "audio") {
         await client.subscribe(user, mediaType);
         user.audioTrack.play();
+
+        setParticipants((prev) => {
+          const busNumber = busNumbers.get(user.uid) || getRandomBusNumber();
+          return new Map(
+            prev.set(user.uid, {
+              uid: user.uid,
+              busNumber: busNumber,
+              audioEnabled: true,
+            })
+          );
+        });
+
+        setMutedParticipants((prev) => {
+          const updated = new Set(prev);
+          updated.delete(user.uid);
+          return updated;
+        });
       }
     };
 
     const handleUserUnpublished = async (user, mediaType) => {
       if (mediaType === "audio") {
-        await client.unsubscribe(user, mediaType);
+        setMutedParticipants((prev) => new Set(prev.add(user.uid)));
+        setActiveSpeakers((prev) => {
+          const updated = new Set(prev);
+          updated.delete(user.uid);
+          return updated;
+        });
+
+        setParticipants((prev) => {
+          const updated = new Map(prev);
+          const participant = updated.get(user.uid);
+          if (participant) {
+            updated.set(user.uid, { ...participant, audioEnabled: false });
+          }
+          return updated;
+        });
       }
+    };
+
+    const handleUserJoined = (user) => {
+      const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+      const isCurrentUser = loggedInUser && loggedInUser.uid === user.uid;
+      let busNumber = isCurrentUser
+        ? loggedInUser.busNumber
+        : busNumbers.get(user.uid);
+
+      if (!busNumber) {
+        busNumber = getRandomBusNumber();
+      }
+
+      setParticipants(
+        (prev) =>
+          new Map(
+            prev.set(user.uid, {
+              uid: user.uid,
+              busNumber: busNumber,
+              audioEnabled: false,
+            })
+          )
+      );
+
+      setBusNumbers((prev) => new Map(prev.set(user.uid, busNumber)));
+    };
+
+    const handleUserLeft = (user) => {
+      setParticipants((prev) => {
+        const updated = new Map(prev);
+        updated.delete(user.uid);
+        return updated;
+      });
+      setMutedParticipants((prev) => {
+        const updated = new Set(prev);
+        updated.delete(user.uid);
+        return updated;
+      });
+      setActiveSpeakers((prev) => {
+        const updated = new Set(prev);
+        updated.delete(user.uid);
+        return updated;
+      });
+    };
+
+    const handleVolumeIndicator = (volumes) => {
+      const speakingUsers = new Set();
+      volumes.forEach((volume) => {
+        if (volume.level > 5) {
+          speakingUsers.add(volume.uid);
+        }
+      });
+      setActiveSpeakers(speakingUsers);
     };
 
     client.on("user-published", handleUserPublished);
     client.on("user-unpublished", handleUserUnpublished);
+    client.on("user-joined", handleUserJoined);
+    client.on("user-left", handleUserLeft);
+    client.enableAudioVolumeIndicator();
+    client.on("volume-indicator", handleVolumeIndicator);
 
     return () => {
       client.off("user-published", handleUserPublished);
       client.off("user-unpublished", handleUserUnpublished);
+      client.off("user-joined", handleUserJoined);
+      client.off("user-left", handleUserLeft);
+      client.off("volume-indicator", handleVolumeIndicator);
     };
-  }, [client]);
+  }, [client, busNumbers]);
 
   const joinChannel = async () => {
+    if (!currentDriver) {
+      setError("Driver information not available");
+      return;
+    }
+
     try {
       if (!client) return;
-      const uid = await client.join(appId, channelName, null, driverId);
+      const uid = await client.join(
+        appId,
+        channelName,
+        null,
+        currentDriver.uid
+      );
       const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
       setLocalAudioTrack(audioTrack);
       await client.publish(audioTrack);
       setJoined(true);
       setError("");
+      setMuted(false);
+
+      setParticipants(
+        (prev) =>
+          new Map(
+            prev.set(uid, {
+              uid: uid,
+              busNumber: currentDriver.busNumber,
+              audioEnabled: true,
+            })
+          )
+      );
+
+      setBusNumbers((prev) => new Map(prev.set(uid, currentDriver.busNumber)));
+
+      setMutedParticipants((prev) => {
+        const updated = new Set(prev);
+        updated.delete(uid);
+        return updated;
+      });
     } catch (err) {
       setError("Failed to join voice channel: " + err.message);
     }
@@ -76,21 +229,76 @@ const VoiceCommunication = ({ driverId, driverName }) => {
       setJoined(false);
       setMuted(false);
       setError("");
+      setParticipants(new Map());
+      setActiveSpeakers(new Set());
+      setMutedParticipants(new Set());
     } catch (err) {
       setError("Failed to leave channel: " + err.message);
     }
   };
 
   const toggleMute = async () => {
-    if (localAudioTrack) {
-      if (muted) {
-        await localAudioTrack.setEnabled(true);
-      } else {
-        await localAudioTrack.setEnabled(false);
+    if (localAudioTrack && currentDriver) {
+      try {
+        const newMutedState = !muted;
+        await localAudioTrack.setEnabled(!newMutedState);
+
+        setMutedParticipants((prev) => {
+          const updated = new Set(prev);
+          if (newMutedState) {
+            updated.add(currentDriver.uid);
+          } else {
+            updated.delete(currentDriver.uid);
+          }
+          return updated;
+        });
+
+        setParticipants((prev) => {
+          const updated = new Map(prev);
+          const participant = updated.get(currentDriver.uid);
+          if (participant) {
+            updated.set(currentDriver.uid, {
+              ...participant,
+              audioEnabled: !newMutedState,
+            });
+          }
+          return updated;
+        });
+
+        setMuted(newMutedState);
+
+        if (newMutedState) {
+          setActiveSpeakers((prev) => {
+            const updated = new Set(prev);
+            updated.delete(currentDriver.uid);
+            return updated;
+          });
+        }
+      } catch (err) {
+        setError("Failed to toggle mute: " + err.message);
       }
-      setMuted(!muted);
     }
   };
+
+  const getParticipantStatus = (participant) => {
+    const isMuted = mutedParticipants.has(participant.uid);
+    const isSpeaking = activeSpeakers.has(participant.uid) && !isMuted;
+    return {
+      backgroundColor: isSpeaking ? "bg-green-50" : "bg-white",
+      borderColor: isSpeaking ? "border-green-500" : "border-gray-200",
+      micIcon: isMuted ? (
+        <MicOff className="w-4 h-4 text-gray-400" />
+      ) : isSpeaking ? (
+        <Mic className="w-4 h-4 text-green-500" />
+      ) : (
+        <Mic className="w-4 h-4 text-gray-400" />
+      ),
+    };
+  };
+
+  if (!currentDriver) {
+    return null;
+  }
 
   return (
     <div className="w-full max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
@@ -100,6 +308,33 @@ const VoiceCommunication = ({ driverId, driverName }) => {
         </h2>
       </div>
 
+      <div className="mb-6 grid grid-cols-2 sm:grid-cols-3 gap-4">
+        {Array.from(participants.values()).map((participant) => {
+          const status = getParticipantStatus(participant);
+          const displayText =
+            participant.uid === currentDriver?.uid
+              ? "You"
+              : `Bus ${participant.busNumber}`;
+
+          return (
+            <div
+              key={participant.uid}
+              className={`p-4 rounded-lg border-2 ${status.backgroundColor} ${status.borderColor} flex flex-col items-center justify-center space-y-2`}
+            >
+              <div className="relative">
+                <UserRound className="w-12 h-12 text-gray-600" />
+                <div className="absolute -right-1 -bottom-1">
+                  {status.micIcon}
+                </div>
+              </div>
+              <span className="text-sm font-medium text-gray-700 text-center">
+                {displayText}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
       <div className="space-y-4">
         <div className="flex justify-center gap-4">
           {!joined ? (
@@ -107,20 +342,7 @@ const VoiceCommunication = ({ driverId, driverName }) => {
               onClick={joinChannel}
               className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center"
             >
-              <svg
-                className="w-4 h-4 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                />
-              </svg>
+              <Phone className="w-4 h-4 mr-2" />
               Join Voice Channel
             </button>
           ) : (
@@ -128,20 +350,7 @@ const VoiceCommunication = ({ driverId, driverName }) => {
               onClick={leaveChannel}
               className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center"
             >
-              <svg
-                className="w-4 h-4 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257a11.042 11.042 0 01-5.516-5.517l2.257-1.128a1 1 0 00.502-1.21L9.228 3.683A1 1 0 008.279 3H5z"
-                />
-              </svg>
+              <PhoneOff className="w-4 h-4 mr-2" />
               Leave Channel
             </button>
           )}
@@ -155,29 +364,11 @@ const VoiceCommunication = ({ driverId, driverName }) => {
                   : "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500"
               }`}
             >
-              <svg
-                className="w-4 h-4 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                {muted ? (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-                  />
-                ) : (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-                  />
-                )}
-              </svg>
+              {muted ? (
+                <MicOff className="w-4 h-4 mr-2" />
+              ) : (
+                <Mic className="w-4 h-4 mr-2" />
+              )}
               {muted ? "Unmute" : "Mute"}
             </button>
           )}

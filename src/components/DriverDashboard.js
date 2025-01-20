@@ -144,6 +144,14 @@ const DriverDashboard = () => {
         >
           Driver List
         </button>
+
+        <button
+          className="px-6 py-2 text-white bg-blue-600 rounded-lg shadow-md hover:bg-blue-700"
+          onClick={() => navigate("/driver/communication")}
+        >
+          Driver Communication
+        </button>
+
         <button
           onClick={handleEmergencyClick}
           className="px-6 py-3 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
@@ -153,12 +161,6 @@ const DriverDashboard = () => {
       </div>
 
       {/* Only render VoiceCommunication if we have currentDriver data */}
-      {currentDriver && (
-        <VoiceCommunication
-          driverId={currentDriver.uid}
-          driverName={currentDriver.driverName}
-        />
-      )}
 
       <label className="flex items-center mt-4">
         <span>Share Location:</span>

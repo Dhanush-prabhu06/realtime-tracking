@@ -12,6 +12,7 @@ import DriverList from "./components/DriverList";
 import AdminProfile from "./components/admin/AdminProfile";
 import DriverProfile from "./components/DriverProfile";
 import SOS from "./components/SOS";
+import VoiceCommunication from "./components/communication/VoiceCommunication";
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
         <Route path="/driver/list" element={<DriverList />} />
         <Route path="/driver/profile" element={<DriverProfile />} />
         <Route path="/driver/sos" element={<SOS />} />
+        <Route path="/driver/communication" element={<VoiceCommunication />} />
         <Route path="/user" element={<UserDashboard />} />
       </Routes>
     </Router>
