@@ -25,6 +25,7 @@ const UserDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   const [latitude, setLatitude] = useState(0);
+  console.log(latitude);
   const [longitude, setLongitude] = useState(0);
   const [mapCenter, setMapCenter] = useState({
     lat: 13.326955, // Default latitude
@@ -70,7 +71,7 @@ const UserDashboard = () => {
   }, [navigate]);
 
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: "AIzaSyBC6jH0EHIKMEck4lNROeKGExDzDHlfDkQ",
+    googleMapsApiKey: "AIzaSyCNuNH8t_kGXe1FEH8FjkGvRPYnzTGRx7Y",
   });
 
   useEffect(() => {

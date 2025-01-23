@@ -148,7 +148,7 @@ const AdminDashboard = () => {
       </div>
 
       <div className="mt-4">
-        <LoadScript googleMapsApiKey="AIzaSyBC6jH0EHIKMEck4lNROeKGExDzDHlfDkQ">
+        <LoadScript googleMapsApiKey="AIzaSyCNuNH8t_kGXe1FEH8FjkGvRPYnzTGRx7Y">
           <GoogleMap
             mapContainerStyle={mapStyles}
             zoom={10}
