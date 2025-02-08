@@ -15,6 +15,7 @@ import {
   InfoWindow,
 } from "@react-google-maps/api";
 import { useNavigate } from "react-router-dom";
+import { Radio } from "lucide-react";
 
 const AdminDashboard = () => {
   const [locations, setLocations] = useState([]);
@@ -145,6 +146,16 @@ const AdminDashboard = () => {
             View Profile
           </a>
         </button>
+        {/* Communication Card */}
+        <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
+          <button
+            onClick={() => navigate("/driver/communication")}
+            className="w-full p-6 flex flex-col items-center gap-3 h-32"
+          >
+            <Radio size={24} className="text-blue-500" />
+            <span className="text-lg font-medium">Communication</span>
+          </button>
+        </div>
       </div>
 
       <div className="mt-4">

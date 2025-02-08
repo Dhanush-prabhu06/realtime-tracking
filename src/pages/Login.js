@@ -108,6 +108,8 @@ const Login = () => {
     }
   };
 
+  console.log(process.env.REACT_APP_apiKey);
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-500 to-indigo-700 px-4">
       <form
