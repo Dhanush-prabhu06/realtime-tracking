@@ -155,6 +155,12 @@ const DriverDetails = () => {
                 </p>
                 <p>
                   <strong className="font-medium text-gray-700">
+                    Licence Number:
+                  </strong>{" "}
+                  {driver.licenseNumber ? driver.licenseNumber : "Newly added"}
+                </p>
+                <p>
+                  <strong className="font-medium text-gray-700">
                     Created At:
                   </strong>{" "}
                   {driver.createdAt

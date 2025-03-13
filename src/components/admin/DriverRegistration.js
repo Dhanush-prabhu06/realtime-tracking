@@ -52,6 +52,7 @@ const DriverRegistration = () => {
         capacity: formData.capacity,
         route: formData.route,
         role: "driver", // Assign role as "driver"
+        licenseNumber: formData.licenseNumber, // Added license number
         createdAt: Timestamp.now(),
       });
 
@@ -71,6 +72,7 @@ const DriverRegistration = () => {
         phoneNumber: "", // Reset phone number field
         area: "",
         capacity: "",
+        licenseNumber: "", // Reset license number field
         route: "",
       });
 
@@ -241,6 +243,25 @@ const DriverRegistration = () => {
             required
           />
         </div>
+        {/* ******************************************************** */}
+        <div>
+          <label
+            htmlFor="licenseNumber"
+            className="block mb-1 text-sm font-medium text-gray-700"
+          >
+            Licence Number
+          </label>
+          <input
+            type="text"
+            id="licenseNumber"
+            name="licenseNumber"
+            value={formData.licenseNumber}
+            onChange={handleInputChange}
+            className="block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900"
+            required
+          />
+        </div>
+        {/* ************************************************************ */}
         <button
           type="submit"
           className={`w-full px-4 py-2 rounded-md text-white ${
